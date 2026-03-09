@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import time
 import plotly.graph_objects as go
 import plotly.express as px
@@ -26,6 +27,9 @@ env = SP500Environment()
 max_episodes = len(env.data) - 20 - 1 if len(env.data) > 20 else 100
 episodes = st.sidebar.slider("Episodes (Trading Days)", 10, max_episodes, min(100, max_episodes))
 speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.0)
+
+# == [추가됨] 실험 재현성을 위한 랜덤 시드 설정 ==
+base_seed = st.sidebar.number_input("Base Random Seed", value=2026, step=1, help="실험 재현성을 위한 기본 시드입니다. 각 Trial마다 이 값에 +1씩 더해집니다.")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🧠 RL Hyperparameters (Logic: STATIC)")
@@ -71,10 +75,18 @@ def style_df(val):
     return 'color: black; font-weight: bold; font-size: 16px;'
 
 if st.button("Run Evaluation"):
+    # == [추가됨] Trial 인덱스 기반 시드 고정 로직 ==
+    trial_idx = len(st.session_state.trial_history)
+    current_seed = base_seed + trial_idx
+    np.random.seed(current_seed)
+    st.toast(f"Trial {trial_idx + 1} Started (Seed: {current_seed})")
+
     h_u, h_s, h_b, steps = [0], [0], [0], [0]
     log_data = []
 
     for i in range(20, 20 + episodes):
+        # (주의) 만약 agent.py를 4개의 값을 반환하도록 수정하셨다면 여기서 언패킹 에러가 날 수 있습니다.
+        # 기존 3개 반환 구조(ticker, is_valid, reward)에 맞춘 코드입니다.
         ticker_u, _, r_u = agent_raw.select_action(current_step=i)
         ticker_s, _, r_s = agent_static.select_action(current_step=i)
         
@@ -97,7 +109,14 @@ if st.button("Run Evaluation"):
         m_b.metric(label="S&P 500 Index (SPY)", value=f"{h_b[-1]:.2f}%", delta=f"{r_b:.2f}%")
         time.sleep(speed)
 
-    st.session_state.trial_history.append({"Trial": len(st.session_state.trial_history) + 1, "Vanilla Final (%)": h_u[-1], "STATIC Final (%)": h_s[-1], "SPY Final (%)": h_b[-1]})
+    # == [추가됨] 기록 데이터에 사용된 Seed 추가 ==
+    st.session_state.trial_history.append({
+        "Trial": trial_idx + 1, 
+        "Seed": current_seed, 
+        "Vanilla Final (%)": h_u[-1], 
+        "STATIC Final (%)": h_s[-1], 
+        "SPY Final (%)": h_b[-1]
+    })
 
     with analysis_view.container():
         st.markdown("#### Agent Decision Analysis")
@@ -126,24 +145,13 @@ if len(st.session_state.trial_history) > 0:
         fig_box.add_trace(go.Box(y=df_h['Vanilla Final (%)'], name='<b>Vanilla RL</b>', line=dict(color='red', width=3), fillcolor='rgba(255,0,0,0.05)', boxmean=True, width=0.35, offsetgroup='1'))
         fig_box.add_trace(go.Box(y=df_h['STATIC Final (%)'], name='<b>STATIC RL (Ours)</b>', line=dict(color='blue', width=3), fillcolor='rgba(0,0,255,0.05)', boxmean=True, width=0.35, offsetgroup='2'))
         
-        # == [수정] 수치 라벨 박스 "바깥쪽" 배치 (xshift 강화) ==
-        # xshift를 대폭 늘려 박스 테두리와의 겹침을 완벽히 차단
-        # Vanilla: Mean/Median 모두 박스 좌측 (xshift 음수), yshift로 수직 겹침 방지
-        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=avg_v, text=f"<b>Mean: {avg_v:.2f}%</b>",
-                               showarrow=False, xshift=-125, yshift=8, xanchor='right',
-                               font=dict(color='red', size=13, family="Arial Black"))
-        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=med_v, text=f"<b>Median: {med_v:.2f}%</b>",
-                               showarrow=False, xshift=-125, yshift=-8, xanchor='right',
-                               font=dict(color='red', size=13, family="Arial Black"))
-        # STATIC: Mean/Median 모두 박스 우측 (xshift 양수), yshift로 수직 겹침 방지
-        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=med_s, text=f"<b>Median: {med_s:.2f}%</b>",
-                               showarrow=False, xshift=125, yshift=8, xanchor='left',
-                               font=dict(color='blue', size=13, family="Arial Black"))
-        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=avg_s, text=f"<b>Mean: {avg_s:.2f}%</b>",
-                               showarrow=False, xshift=125, yshift=-8, xanchor='left',
-                               font=dict(color='blue', size=13, family="Arial Black"))
+        # == 수치 라벨 박스 "바깥쪽" 배치 ==
+        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=avg_v, text=f"<b>Mean: {avg_v:.2f}%</b>", showarrow=False, xshift=-125, yshift=8, xanchor='right', font=dict(color='red', size=13, family="Arial Black"))
+        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=med_v, text=f"<b>Median: {med_v:.2f}%</b>", showarrow=False, xshift=-125, yshift=-8, xanchor='right', font=dict(color='red', size=13, family="Arial Black"))
+        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=med_s, text=f"<b>Median: {med_s:.2f}%</b>", showarrow=False, xshift=125, yshift=8, xanchor='left', font=dict(color='blue', size=13, family="Arial Black"))
+        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=avg_s, text=f"<b>Mean: {avg_s:.2f}%</b>", showarrow=False, xshift=125, yshift=-8, xanchor='left', font=dict(color='blue', size=13, family="Arial Black"))
 
-        # == [수정] S&P 500 중앙 배치 (에러 해결 및 가독성) ==
+        # == S&P 500 중앙 배치 ==
         fig_box.add_hline(y=avg_spy, line_width=2.5, line_dash="dot", line_color="green")
         fig_box.add_annotation(x=0.5, xref="paper", y=avg_spy, text=f"<b>S&P 500: {avg_spy:.2f}%</b>", showarrow=False, yshift=15, font=dict(color="green", size=15, family="Arial Black"), bgcolor="white")
 
@@ -158,6 +166,7 @@ if len(st.session_state.trial_history) > 0:
         st.plotly_chart(fig_box, use_container_width=True)
     
     with col_tbl_h:
-        st.dataframe(df_h.set_index("Trial").style.map(style_df).format("{:.2f}"), height=550, use_container_width=True)
+        # == [수정됨] Seed 컬럼 추가로 인한 포맷팅 안전 처리 ==
+        st.dataframe(df_h.set_index("Trial").style.map(style_df).format({"Vanilla Final (%)": "{:.2f}", "STATIC Final (%)": "{:.2f}", "SPY Final (%)": "{:.2f}", "Seed": "{:.0f}"}), height=550, use_container_width=True)
 
 st.markdown("#### 차트 해석 가이드: 점선(- - -)은 평균값(Mean), 실선(—)은 중앙값(Median)입니다.")
