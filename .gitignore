@@ -38,3 +38,7 @@ pip-delete-this-directory.txt
 # 에이전트 학습 과정에서 발생하는 로그들입니다.
 *.log
 logs/
+
+
+# ---
+memo.txt
