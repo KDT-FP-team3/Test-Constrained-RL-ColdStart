@@ -66,14 +66,17 @@ if st.button(">> Run Evaluation"):
 
     for i in range(20, 20 + episodes):
         ticker_u, _, r_u = agent_raw.select_action(current_step=i)
-        ticker_s, _, r_s = agent_static.select_action(current_step=i)
+        # ticker_s, _, r_s = agent_static.select_action(current_step=i)
         
-        # SPY 벤치마크 일일 수익률 계산
-        spy_curr = float(env.data['SPY'].iloc[i])
-        spy_next = float(env.data['SPY'].iloc[i+1])
-        r_b = ((spy_next - spy_curr) / spy_curr) * 100 if spy_curr > 0 else 0.0
-        
-        h_u.append(h_u[-1] + r_u)
+        # == [수정된 부분] SPY 벤치마크 일일 수익률 계산 (결측치 방어 로직) ==
+        if 'SPY' in env.data.columns:
+            spy_curr = float(env.data['SPY'].iloc[i])
+            spy_next = float(env.data['SPY'].iloc[i+1])
+            r_b = ((spy_next - spy_curr) / spy_curr) * 100 if spy_curr > 0 else 0.0
+        else:
+            r_b = 0.0 # SPY 데이터가 없을 경우 0%로 처리하여 서버 중단 방지
+            
+        # h_u.append(h_u[-1] + r_u)
         h_s.append(h_s[-1] + r_s)
         h_b.append(h_b[-1] + r_b)
         current_day = i - 19
