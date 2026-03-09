@@ -136,19 +136,23 @@ if len(st.session_state.trial_history) > 0:
         # == [요청 반영 2] 안내 라벨창 제거 (... 부분 제거) ==
         # 기존의 add_annotation 가이드 박스 블록을 삭제했습니다.
         
-        # == [요청 반영 1] 수치 라벨 "완전히 박스 바깥쪽" 날개형 배치 ==
-        # xshift 값을 대폭 강화(±150)하여 수치 % 글자들이 박스 테두리에 절대 닿지 않게 했습니다.
-        # Vanilla (좌측) - 점선(Mean): -150, 실선(Median): -80
-        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=avg_vanilla, text=f"<b>{avg_vanilla:.2f}%</b>", showarrow=False, xshift=-150, font=dict(color='red', size=14))
-        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=median_vanilla, text=f"<b>{median_vanilla:.2f}%</b>", showarrow=False, xshift=-80, font=dict(color='red', size=14))
-        
-        # STATIC (우측) - 실선(Median): 80, 점선(Mean): 150
-        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=median_static, text=f"<b>{median_static:.2f}%</b>", showarrow=False, xshift=80, font=dict(color='blue', size=14))
-        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=avg_static, text=f"<b>{avg_static:.2f}%</b>", showarrow=False, xshift=150, font=dict(color='blue', size=14))
+        # Vanilla RL 라벨: 박스 좌측에 배치, xanchor='right'로 텍스트가 오른쪽 정렬
+        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=avg_vanilla, text=f"<b>{avg_vanilla:.2f}%</b>",
+                               showarrow=False, xshift=-70, xanchor='right', font=dict(color='red', size=13))
+        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=median_vanilla, text=f"<b>{median_vanilla:.2f}%</b>",
+                               showarrow=False, xshift=-40, xanchor='right', font=dict(color='red', size=13))
 
-        # == S&P 500 라벨 (그래프 좌측 밖 배치) ==
-        # x=-0.1로 그래프 영역 외부 좌측 상단에 배치하여 데이터와 겹침 방지.
-        fig_box.add_hline(y=avg_spy, line_width=1.5, line_dash="dot", line_color="green", annotation_text=f"<b>S&P 500<br>{avg_spy:.2f}%</b>", annotation_position="top left", annotation_font=dict(color="green", size=14), annotation_x=-0.1)
+        # STATIC RL 라벨: 박스 우측에 배치, xanchor='left'로 텍스트가 왼쪽 정렬
+        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=median_static, text=f"<b>{median_static:.2f}%</b>",
+                               showarrow=False, xshift=40, xanchor='left', font=dict(color='blue', size=13))
+        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=avg_static, text=f"<b>{avg_static:.2f}%</b>",
+                               showarrow=False, xshift=70, xanchor='left', font=dict(color='blue', size=13))
+
+        # S&P 500 기준선: 우측 상단에 배치하여 좌측 라벨과 충돌 방지
+        fig_box.add_hline(y=avg_spy, line_width=1.5, line_dash="dot", line_color="green",
+                          annotation_text=f"<b>S&P 500: {avg_spy:.2f}%</b>",
+                          annotation_position="top right",
+                          annotation_font=dict(color="green", size=13))
 
         # == [요청 반영 3] 가로/세로축 텍스트 크기 확대 및 볼드체 적용 ==
         fig_box.update_layout(
@@ -167,8 +171,8 @@ if len(st.session_state.trial_history) > 0:
                 tickfont=dict(size=18, family="Arial Black"), 
                 showgrid=True, gridcolor='lightgray'
             ),
-            boxmode='group', boxgroupgap=0.05, # 막대기 사이를 가깝게 밀착
-            plot_bgcolor='white', height=550, margin=dict(t=120, b=100, l=120, r=40)
+            boxmode='group', boxgroupgap=0.05,
+            plot_bgcolor='white', height=550, margin=dict(t=120, b=100, l=120, r=160)
         )
         fig_box.add_hline(y=0, line_width=2, line_color="black")
         st.plotly_chart(fig_box, use_container_width=True)
