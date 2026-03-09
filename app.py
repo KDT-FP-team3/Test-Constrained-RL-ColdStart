@@ -6,61 +6,58 @@ import plotly.graph_objects as go
 import plotly.express as px
 from agent import SP500Environment, RecommendationAgent
 
-# == [UI 개선] 메트릭 라벨 색상 CSS ==
+# CSS: 텍스트 크기 확대, 굵게 처리, 색상 지정
 st.markdown("""
 <style>
-div[data-testid="column"]:nth-of-type(1) div[data-testid="stMetricLabel"] { color: red !important; font-weight: bold !important; font-size: 1.1rem !important; }
-div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetricLabel"] { color: blue !important; font-weight: bold !important; font-size: 1.1rem !important; }
-div[data-testid="column"]:nth-of-type(3) div[data-testid="stMetricLabel"] { color: green !important; font-weight: bold !important; font-size: 1.1rem !important; }
+/* 지표 라벨 색상 및 폰트 크기 강제 지정 */
+div[data-testid="column"]:nth-of-type(1) div[data-testid="stMetricLabel"] p { color: red !important; font-weight: 900 !important; font-size: 1.4rem !important; }
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetricLabel"] p { color: blue !important; font-weight: 900 !important; font-size: 1.4rem !important; }
+div[data-testid="column"]:nth-of-type(3) div[data-testid="stMetricLabel"] p { color: green !important; font-weight: 900 !important; font-size: 1.4rem !important; }
+
+/* 지표 결과 수치 폰트 크기 확대 */
+div[data-testid="stMetricValue"] { font-weight: 900 !important; font-size: 2.2rem !important; }
+
+/* 전체 텍스트 굵게 처리 */
+.stMarkdown p, .stMarkdown li { font-size: 1.1rem !important; font-weight: bold !important; color: black !important; }
 </style>
 """, unsafe_allow_html=True)
 
 st.set_page_config(page_title="Test-Constrained-RL", layout="wide")
-st.markdown("## >> Test-Constrained-RL-ColdStart: S&P 500 Performance")
+
+st.markdown("## Test-Constrained-RL-ColdStart: S&P 500 Performance")
 
 if 'trial_history' not in st.session_state:
     st.session_state.trial_history = []
 
-with st.spinner('>> 실시간 S&P 500 데이터를 분석 중입니다...'):
+with st.spinner('실시간 S&P 500 데이터를 분석 중입니다...'):
     env = SP500Environment()
     agent_raw = RecommendationAgent(env, use_constraints=False)
     agent_static = RecommendationAgent(env, use_constraints=True)
 
-st.sidebar.markdown("### >> Test Parameters")
-# 보유한 데이터의 최대 거래일수 계산
+st.sidebar.markdown("### Test Parameters")
 max_episodes = len(env.data) - 20 - 1 if len(env.data) > 20 else 100
+episodes = st.sidebar.slider("Episodes (Trading Days)", 10, max_episodes, min(100, max_episodes))
+speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.05)
 
-# 슬라이더의 최대 한도를 100에서 max_episodes로 확장 (기본 세팅값을 500이나 1000으로 조정 가능)
-episodes = st.sidebar.slider("Episodes (Trading Days)", 10, max_episodes, min(1000, max_episodes))
-speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.0) # 기본 속도를 0.0(즉시 표시)으로 낮추는 것을 추천
-
-# == Plotly 차트: S&P 500 벤치마크 추가 ==
+# Plotly 차트 설정
 fig = go.Figure()
 
-fig.add_trace(go.Scatter(x=[0], y=[0], mode='lines+markers', name='<b>Vanilla RL (Unconstrained)</b>', line=dict(color='red', width=3), marker=dict(symbol='circle-open', size=8, line_width=2)))
-fig.add_trace(go.Scatter(x=[0], y=[0], mode='lines+markers', name='<b>RL with STATIC (Ours)</b>', line=dict(color='blue', width=3), marker=dict(symbol='square-open', size=8, line_width=2)))
-# !! [개선] S&P 500 초록색 촘촘한 점선 및 빈 마름모 마커 추가
-fig.add_trace(go.Scatter(
-    x=[0], y=[0], 
-    mode='lines+markers', 
-    name='<b>S&P 500 Index (SPY)</b>', 
-    line=dict(color='green', width=3, dash='dot'), # 'dash' 대신 'dot'을 사용하여 촘촘한 점선 구현
-    marker=dict(symbol='diamond-open', size=8, line_width=2) # 빈 마름모 기호 적용
-))
+fig.add_trace(go.Scatter(x=[0], y=[0], mode='lines+markers', name='<b>Vanilla RL (Unconstrained)</b>', line=dict(color='red', width=4), marker=dict(symbol='circle-open', size=10, line_width=3)))
+fig.add_trace(go.Scatter(x=[0], y=[0], mode='lines+markers', name='<b>RL with STATIC (Ours)</b>', line=dict(color='blue', width=4), marker=dict(symbol='square-open', size=10, line_width=3)))
+fig.add_trace(go.Scatter(x=[0], y=[0], mode='lines+markers', name='<b>S&P 500 Index (SPY)</b>', line=dict(color='green', width=4, dash='dot'), marker=dict(symbol='diamond-open', size=10, line_width=3)))
 
 fig.update_layout(
-    title=dict(text="<b>Cumulative Return Comparison (S&P 500)</b>", font=dict(size=28, color='black')),
-    xaxis=dict(title="<b>Trading Days</b>", titlefont=dict(size=22, color='black'), showgrid=True, gridcolor='lightgray'),
-    yaxis=dict(title="<b>Total Cumulative Return (%)</b>", titlefont=dict(size=22, color='black'), showgrid=True, gridcolor='lightgray'),
-    legend=dict(font=dict(size=20, color='black'), x=0.01, y=0.99, borderwidth=1, bgcolor='rgba(0,0,0,0)'),
-    plot_bgcolor='white', height=500
+    title=dict(text="<b>Cumulative Return Comparison (S&P 500)</b>", font=dict(size=32, color='black', family="Arial Black")),
+    xaxis=dict(title="<b>Trading Days</b>", titlefont=dict(size=26, color='black', family="Arial Black"), tickfont=dict(size=20, color='black', family="Arial Black"), showgrid=True, gridcolor='lightgray'),
+    yaxis=dict(title="<b>Total Cumulative Return (%)</b>", titlefont=dict(size=26, color='black', family="Arial Black"), tickfont=dict(size=20, color='black', family="Arial Black"), showgrid=True, gridcolor='lightgray'),
+    legend=dict(font=dict(size=24, color='black', family="Arial Black"), x=0.01, y=0.99, borderwidth=2, bgcolor='rgba(0,0,0,0)'),
+    plot_bgcolor='white', height=600, margin=dict(t=80, b=80, l=80, r=40)
 )
-fig.add_hline(y=0, line_width=3, line_color="black", opacity=0.8)
+fig.add_hline(y=0, line_width=4, line_color="black", opacity=1.0)
 
 chart_view = st.empty()
 chart_view.plotly_chart(fig, use_container_width=True)
 
-# 지표 카드 (SPY 추가)
 col1, col2, col3 = st.columns(3)
 m_u = col1.empty()
 m_s = col2.empty()
@@ -69,7 +66,14 @@ m_b = col3.empty()
 st.markdown("---")
 analysis_view = st.empty()
 
-if st.button(">> Run Evaluation"):
+# 데이터프레임 음수 붉은색 처리를 위한 스타일 함수
+def style_dataframe(val):
+    if isinstance(val, (int, float)):
+        color = 'red' if val < 0 else 'black'
+        return f'color: {color}; font-weight: bold; font-size: 16px;'
+    return 'color: black; font-weight: bold; font-size: 16px;'
+
+if st.button("Run Evaluation"):
     h_u, h_s, h_b, steps = [0], [0], [0], [0]
     log_data = []
 
@@ -77,13 +81,12 @@ if st.button(">> Run Evaluation"):
         ticker_u, _, r_u = agent_raw.select_action(current_step=i)
         ticker_s, _, r_s = agent_static.select_action(current_step=i)
         
-        # == [수정된 부분] SPY 벤치마크 일일 수익률 계산 (결측치 방어 로직) ==
         if 'SPY' in env.data.columns:
             spy_curr = float(env.data['SPY'].iloc[i])
             spy_next = float(env.data['SPY'].iloc[i+1])
             r_b = ((spy_next - spy_curr) / spy_curr) * 100 if spy_curr > 0 else 0.0
         else:
-            r_b = 0.0 # SPY 데이터가 없을 경우 0%로 처리하여 서버 중단 방지
+            r_b = 0.0
             
         h_u.append(h_u[-1] + r_u)
         h_s.append(h_s[-1] + r_s)
@@ -104,7 +107,6 @@ if st.button(">> Run Evaluation"):
         
         time.sleep(speed)
 
-    # Trial History 기록
     st.session_state.trial_history.append({
         "Trial": len(st.session_state.trial_history) + 1,
         "Vanilla Final (%)": round(h_u[-1], 2),
@@ -114,44 +116,71 @@ if st.button(">> Run Evaluation"):
 
     df_log = pd.DataFrame(log_data)
     with analysis_view.container():
-        st.markdown("#### >> Agent Decision Analysis")
+        st.markdown("#### Agent Decision Analysis")
         col_tbl, col_bar = st.columns([1.2, 1])
         with col_tbl:
-            st.dataframe(df_log.set_index("Day"), height=300, use_container_width=True)
+            styled_df = df_log.set_index("Day").style.map(style_dataframe)
+            st.dataframe(styled_df, height=350, use_container_width=True)
         with col_bar:
             dist_counts = df_log['STATIC Pick (Ours)'].value_counts().reset_index()
             dist_counts.columns = ['Ticker', 'Buy Count']
             fig_bar = px.bar(dist_counts, x='Ticker', y='Buy Count', title="Frequency of Safe-Asset Selection", color='Buy Count', color_continuous_scale='Blues')
-            fig_bar.update_layout(plot_bgcolor='white', height=300)
+            fig_bar.update_layout(
+                title=dict(font=dict(size=24, color='black', family="Arial Black")),
+                xaxis=dict(titlefont=dict(size=20, color='black', family="Arial Black"), tickfont=dict(size=16, color='black', family="Arial Black")),
+                yaxis=dict(titlefont=dict(size=20, color='black', family="Arial Black"), tickfont=dict(size=16, color='black', family="Arial Black")),
+                plot_bgcolor='white', height=350
+            )
             st.plotly_chart(fig_bar, use_container_width=True)
 
-# == 하단: 통계적 박스 플롯 및 승률 분석 (개선됨) ==
 if len(st.session_state.trial_history) > 0:
     st.markdown("---")
-    st.markdown("### 🏆 Trial History: Statistical Superiority Analysis")
+    st.markdown("### Trial History: Statistical Superiority Analysis")
     
     history_df = pd.DataFrame(st.session_state.trial_history)
     
-    # 승률 및 평균 계산
     win_count = (history_df['STATIC Final (%)'] > history_df['Vanilla Final (%)']).sum()
     win_rate = (win_count / len(history_df)) * 100
     avg_static = history_df['STATIC Final (%)'].mean()
     avg_vanilla = history_df['Vanilla Final (%)'].mean()
+    avg_spy = history_df['SPY Final (%)'].mean()
     
-    # 강력한 통계 요약 텍스트
-    st.success(f"**🔥 누적 승률 (Win Rate):** {win_rate:.1f}% (STATIC 모델이 Vanilla를 이긴 비율) | **평균 수익률:** STATIC **{avg_static:.2f}%** vs Vanilla **{avg_vanilla:.2f}%**")
+    alpha = avg_static - avg_spy
+    
+    st.info(f"누적 승률 (Win Rate): {win_rate:.1f}% (STATIC 모델이 Vanilla를 이긴 비율) | 평균 수익률: STATIC {avg_static:.2f}% vs Vanilla {avg_vanilla:.2f}%")
+    
+    if alpha > 0:
+        st.info(f"S&P 500 대비 성과 (Alpha): 시장 평균({avg_spy:.2f}%) 대비 +{alpha:.2f}%p 초과 수익 달성")
+    else:
+        st.warning(f"S&P 500 대비 성과 (Alpha): 시장 평균({avg_spy:.2f}%) 대비 {alpha:.2f}%p 하회")
+
+    st.markdown("차트 해석 가이드: 박스 내부의 점선(- - -)은 평균값(Mean), 실선(—)은 중앙값(Median)입니다. 가로로 뻗은 초록색 점선은 S&P 500 시장 지수입니다.")
     
     col_box, col_hist_table = st.columns([2, 1])
     
     with col_box:
-        # 지그재그 선 대신 Box Plot으로 분포 시각화
         fig_box = go.Figure()
-        fig_box.add_trace(go.Box(y=history_df['Vanilla Final (%)'], name='Vanilla RL', marker_color='red', boxmean=True))
-        fig_box.add_trace(go.Box(y=history_df['STATIC Final (%)'], name='STATIC RL (Ours)', marker_color='blue', boxmean=True))
+        fig_box.add_trace(go.Box(y=history_df['Vanilla Final (%)'], name='<b>Vanilla RL</b>', marker_color='red', boxmean=True))
+        fig_box.add_trace(go.Box(y=history_df['STATIC Final (%)'], name='<b>STATIC RL (Ours)</b>', marker_color='blue', boxmean=True))
         
-        fig_box.update_layout(title="Return Distribution across Trials", yaxis_title="Final Cumulative Return (%)", plot_bgcolor='white', height=350)
-        fig_box.add_hline(y=0, line_width=2, line_color="black", opacity=0.8)
+        fig_box.update_layout(
+            title=dict(text="<b>Return Distribution across Trials</b>", font=dict(size=28, color='black', family="Arial Black")),
+            yaxis=dict(title="<b>Final Cumulative Return (%)</b>", titlefont=dict(size=22, color='black', family="Arial Black"), tickfont=dict(size=18, color='black', family="Arial Black")),
+            xaxis=dict(tickfont=dict(size=22, color='black', family="Arial Black")),
+            plot_bgcolor='white', height=400, margin=dict(t=60, b=40, l=60, r=40)
+        )
+        
+        fig_box.add_hline(y=0, line_width=3, line_color="black", opacity=1.0)
+        
+        fig_box.add_hline(
+            y=avg_spy, line_width=4, line_dash="dot", line_color="green",
+            annotation_text=f"S&P 500 (SPY): {avg_spy:.2f}%", 
+            annotation_position="top right", 
+            annotation_font=dict(color="green", size=18, family="Arial Black")
+        )
+        
         st.plotly_chart(fig_box, use_container_width=True)
         
     with col_hist_table:
-        st.dataframe(history_df.set_index("Trial"), height=350, use_container_width=True)
+        styled_history_df = history_df.set_index("Trial").style.map(style_dataframe)
+        st.dataframe(styled_history_df, height=400, use_container_width=True)
