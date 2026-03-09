@@ -10,13 +10,13 @@ from agent import SP500Environment, RecommendationAgent
 st.markdown("""
 <style>
 /* 지표 라벨 색상 및 폰트 크기 강제 지정 */
-div[data-testid="column"]:nth-of-type(1) [data-testid="stMetricLabel"] * { color: red !important; font-weight: 900 !important; font-size: 1.6rem !important; }
-div[data-testid="column"]:nth-of-type(2) [data-testid="stMetricLabel"] * { color: blue !important; font-weight: 900 !important; font-size: 1.6rem !important; }
-div[data-testid="column"]:nth-of-type(3) [data-testid="stMetricLabel"] * { color: green !important; font-weight: 900 !important; font-size: 1.6rem !important; }
-div[data-testid="stMetricValue"] { font-weight: 900 !important; font-size: 2.4rem !important; }
+div[data-testid="column"]:nth-of-type(1) [data-testid="stMetricLabel"] * { color: red !important; font-weight: 900 !important; font-size: 1.4rem !important; }
+div[data-testid="column"]:nth-of-type(2) [data-testid="stMetricLabel"] * { color: blue !important; font-weight: 900 !important; font-size: 1.4rem !important; }
+div[data-testid="column"]:nth-of-type(3) [data-testid="stMetricLabel"] * { color: green !important; font-weight: 900 !important; font-size: 1.4rem !important; }
+div[data-testid="stMetricValue"] { font-weight: 900 !important; font-size: 2.2rem !important; }
 
 /* 테이블 헤더 스타일 조정 (검정색, 굵게, 크게) */
-thead tr th { font-size: 18px !important; color: black !important; font-weight: 900 !important; }
+thead tr th { font-size: 20px !important; color: black !important; font-weight: 900 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -34,7 +34,7 @@ with st.spinner('실시간 S&P 500 데이터를 분석 중입니다...'):
 st.sidebar.markdown("### Test Parameters")
 max_episodes = len(env.data) - 20 - 1 if len(env.data) > 20 else 100
 episodes = st.sidebar.slider("Episodes (Trading Days)", 10, max_episodes, min(100, max_episodes))
-speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.05)
+speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.0)
 
 # == 메인 시뮬레이션 차트 ==
 fig = go.Figure()
@@ -126,40 +126,31 @@ if len(st.session_state.trial_history) > 0:
     col_box, col_hist_table = st.columns([2, 1])
     with col_box:
         fig_box = go.Figure()
-        # == 박스 폭 조절 및 투명화 ==
-        # 'STATIC RL (Ours)' 대신 실제 데이터가 담긴 'STATIC Final (%)'을 사용합니다.
-        fig_box.add_trace(go.Box(
-            y=history_df['STATIC Final (%)'], 
-            name='<b>STATIC RL (Ours)</b>', 
-            line=dict(color='blue', width=2), 
-            fillcolor='rgba(0,0,0,0)', 
-            boxmean=True, 
-            width=0.4
-        ))
-
-        # Vanilla 부분도 동일하게 맞춰줍니다.
-        fig_box.add_trace(go.Box(
-            y=history_df['Vanilla Final (%)'], 
-            name='<b>Vanilla RL</b>', 
-            line=dict(color='red', width=2), 
-            fillcolor='rgba(0,0,0,0)', 
-            boxmean=True, 
-            width=0.4
-        ))
         
-        # == 안내 라벨창 (중앙 상단 배치) ==
-        fig_box.add_annotation(xref="paper", yref="paper", x=0.5, y=1.18, text="<b>[Box Line Guide]</b><br>점선(- - -) : 평균(Mean) | 실선(──) : 중앙값(Median)", showarrow=False, font=dict(size=14, color="black", family="Arial Black"), bgcolor="rgba(255,255,255,0.9)", bordercolor="black", borderwidth=2, align="center")
+        # == 박스 폭 조절 및 간격 밀착 ==
+        fig_box.add_trace(go.Box(y=history_df['Vanilla Final (%)'], name='<b>Vanilla RL</b>', line=dict(color='red', width=2), fillcolor='rgba(0,0,0,0)', boxmean=True, width=0.35))
+        fig_box.add_trace(go.Box(y=history_df['STATIC Final (%)'], name='<b>STATIC RL (Ours)</b>', line=dict(color='blue', width=2), fillcolor='rgba(0,0,0,0)', boxmean=True, width=0.35))
         
-        # == 수치 라벨 (점선-왼쪽, 실선-오른쪽) ==
-        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=avg_vanilla, text=f"<b>{avg_vanilla:.2f}%</b>", showarrow=False, xshift=-70, font=dict(color='red', size=14, family="Arial Black"))
-        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=median_vanilla, text=f"<b>{median_vanilla:.2f}%</b>", showarrow=False, xshift=70, font=dict(color='red', size=14, family="Arial Black"))
-        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=avg_static, text=f"<b>{avg_static:.2f}%</b>", showarrow=False, xshift=-70, font=dict(color='blue', size=14, family="Arial Black"))
-        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=median_static, text=f"<b>{median_static:.2f}%</b>", showarrow=False, xshift=70, font=dict(color='blue', size=14, family="Arial Black"))
+        # == 안내 라벨창 (중앙 상단 배치 및 줄바꿈) ==
+        fig_box.add_annotation(xref="paper", yref="paper", x=0.5, y=1.18, text="<b>[Box Line Guide]</b><br>점선(- - -) : 평균(Mean)<br>실선(──) : 중앙값(Median)", showarrow=False, font=dict(size=14, color="black", family="Arial Black"), bgcolor="rgba(255,255,255,0.9)", bordercolor="black", borderwidth=2, align="center")
+        
+        # == 수치 라벨 (박스 외부: 점선-왼쪽, 실선-오른쪽) ==
+        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=avg_vanilla, text=f"<b>{avg_vanilla:.2f}%</b>", showarrow=False, xshift=-75, font=dict(color='red', size=14, family="Arial Black"))
+        fig_box.add_annotation(x='<b>Vanilla RL</b>', y=median_vanilla, text=f"<b>{median_vanilla:.2f}%</b>", showarrow=False, xshift=75, font=dict(color='red', size=14, family="Arial Black"))
+        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=avg_static, text=f"<b>{avg_static:.2f}%</b>", showarrow=False, xshift=-75, font=dict(color='blue', size=14, family="Arial Black"))
+        fig_box.add_annotation(x='<b>STATIC RL (Ours)</b>', y=median_static, text=f"<b>{median_static:.2f}%</b>", showarrow=False, xshift=75, font=dict(color='blue', size=14, family="Arial Black"))
 
-        fig_box.update_layout(title=dict(text="<b>Return Distribution across Trials</b>", font=dict(size=28, family="Arial Black")), yaxis=dict(title="<b>Final Cumulative Return (%)</b>", tickfont=dict(size=16)), xaxis=dict(tickfont=dict(size=18)), plot_bgcolor='white', height=500, margin=dict(t=120))
+        # == 레이아웃 최적화 (박스 간격 축소) ==
+        fig_box.update_layout(
+            title=dict(text="<b>Return Distribution across Trials</b>", font=dict(size=28, family="Arial Black")),
+            yaxis=dict(title="<b>Final Cumulative Return (%)</b>", tickfont=dict(size=16)),
+            xaxis=dict(tickfont=dict(size=18)),
+            boxgap=0.1, boxgroupgap=0.05, # 박스 사이 간격 최소화
+            plot_bgcolor='white', height=500, margin=dict(t=120)
+        )
         fig_box.add_hline(y=0, line_width=2, line_color="black")
         
-        # == S&P 500 라벨 (맨 왼쪽, 줄바꿈) ==
+        # == S&P 500 라벨 (맨 왼쪽 상단, 줄바꿈) ==
         fig_box.add_hline(y=avg_spy, line_width=1.5, line_dash="dot", line_color="green", annotation_text=f"<b>S&P 500<br>{avg_spy:.2f}%</b>", annotation_position="top left", annotation_font=dict(color="green", size=16, family="Arial Black"))
         st.plotly_chart(fig_box, use_container_width=True)
         
