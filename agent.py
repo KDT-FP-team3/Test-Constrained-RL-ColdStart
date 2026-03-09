@@ -48,9 +48,15 @@ class StaticConstraintEngine:
         return np.where(self.valid_mask, logits, -np.inf)
 
 class RecommendationAgent:
-    def __init__(self, env, use_constraints=False):
+    # lr, gamma, eps 인자를 추가하고 기본값을 설정합니다.
+    def __init__(self, env, use_constraints=True, lr=0.01, gamma=0.95, eps=0.1):
         self.env = env
         self.use_constraints = use_constraints
+        
+        # 주입받은 하이퍼파라미터를 에이전트 속성으로 저장
+        self.lr = lr
+        self.gamma = gamma
+        self.epsilon = eps
         
     def select_action(self, current_step):
         logits = np.random.randn(self.env.vocab_size)
