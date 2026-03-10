@@ -26,7 +26,7 @@ st.sidebar.markdown("### ⚙️ System Parameters")
 env = SP500Environment()
 max_episodes = len(env.data) - 20 - 1 if len(env.data) > 20 else 100
 episodes = st.sidebar.slider("Episodes (Trading Days)", 10, max_episodes, 100)
-speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.03, st)
+speed = st.sidebar.slider("Frame Speed (sec)", 0.0, 0.5, 0.03, step=0.01)
 
 # 시드 및 자동 반복 설정
 base_seed = st.sidebar.number_input("Base Random Seed", value=2026, step=1)
