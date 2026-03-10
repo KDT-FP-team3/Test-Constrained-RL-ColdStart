@@ -22,7 +22,7 @@ thead tr th { font-size: 18px !important; color: black !important; font-weight: 
 st.markdown("## Test-Constrained-RL-ColdStart: S&P 500 Performance")
 
 # == 🛠 사이드바: 테스트 및 강화학습 파라미터 제어 ==
-st.sidebar.markdown("### ⚙️ System Parameters")
+st.sidebar.markdown("### System Parameters")
 env = SP500Environment()
 max_episodes = len(env.data) - 20 - 1 if len(env.data) > 20 else 100
 episodes = st.sidebar.slider("Episodes (Trading Days)", 10, max_episodes, min(100, max_episodes))
@@ -36,7 +36,7 @@ base_seed = st.sidebar.number_input("Base Random Seed", value=2026, step=1, help
 auto_runs = st.sidebar.number_input("Auto Run Count", min_value=1, value=1, step=1, help="Run Evaluation 버튼 클릭 시 자동으로 반복 실행할 횟수입니다.")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🧠 RL Hyperparameters (Logic: STATIC)")
+st.sidebar.markdown("### RL Hyperparameters (Logic: STATIC)")
 lr = st.sidebar.slider("Learning Rate (α)", 0.001, 0.5, 0.01, step=0.001)
 # [수정됨] Gamma 기본값 0.98 반영
 gamma = st.sidebar.slider("Discount Factor (γ)", 0.50, 0.99, 0.98, step=0.01)
@@ -212,7 +212,7 @@ if len(st.session_state.trial_history) > 0:
         # 테이블 상단 요약 통계량 명시
         st.markdown(f"""
         <div style='background-color: #f8f9fa; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 10px;'>
-            <h4 style='margin-top:0px; color: black; font-weight: 900;'>📊 통계 요약 (Expected & Risk)</h4>
+            <h4 style='margin-top:0px; color: black; font-weight: 900;'> 통계 요약 (Expected & Risk)</h4>
             <ul style='font-size: 15px; margin-bottom: 0px;'>
                 <li><b style='color:red;'>Vanilla 평균(기대치):</b> {v_mean:.2f}% (σ={v_std:.2f}%)</li>
                 <li><b style='color:red;'>Vanilla 범위:</b> {v_min:.2f}% ~ {v_max:.2f}%</li>
