@@ -23,6 +23,7 @@ S&P 500 대표 종목을 대상으로 제약 조건 강화학습(Constrained Rei
 <img width="875" height="641" alt="메인대시보드-라이트모드" src="https://github.com/user-attachments/assets/f229c66c-d404-4a6b-8112-f57397481416" />
 
 **[이미지 2] 메인 대시보드 - 다크 모드**
+<img width="866" height="644" alt="강화학습-그림1_어두운배경" src="https://github.com/user-attachments/assets/44f24630-4c33-4a5c-a236-39882d22a876" />
 
 <!-- 다크모드 메인 대시보드 스크린샷 삽입 위치 -->
 <!-- <img alt="메인대시보드-다크모드" src="" /> -->
